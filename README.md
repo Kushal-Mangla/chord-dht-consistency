@@ -178,6 +178,11 @@ python3 main.py --port 5003 --host 0.0.0.0 --m 6 --N 3 --R 2 --W 2 --join 127.0.
 ```
 
 #### Terminal 4: Client Operations
+
+```bash
+python3 -m client.cli --node hostip:hostport
+python3 -m client.cli --node 127.0.0.1:5001
+```
 ```bash
 # PUT a key-value pair
 curl -X PUT "http://127.0.0.1:8001/put?key=mykey&value=myvalue"
@@ -215,6 +220,9 @@ python3 main.py --port 5001 --host 0.0.0.0 --m 6 --N 3 --R 2 --W 2 --join 192.16
 ```
 
 #### Client (Any Machine)
+```bash
+python3 -m client.cli --node 192.168.1.100:5001
+```
 ```bash
 # Access any node in the cluster
 curl -X PUT "http://192.168.1.100:8001/put?key=test&value=hello"
@@ -433,6 +441,103 @@ GET /ring
 ---
 
 ## Implementation Details
+
+### Core Implementation Highlights
+
+This project implements a **modified Chord DHT protocol** with key design decisions optimized for fault tolerance and data availability in the presence of network partitions and node failures.
+
+#### 1. **Full Ring Knowledge (O(N) Routing)**
+
+Unlike traditional Chord which uses O(log N) finger tables, **every node maintains a complete list of all nodes** that have ever connected to the system.
+
+- **Node Discovery**: A periodic ping mechanism updates all nodes about new node additions
+- **No Removal on Disconnect**: When a node disconnects, it remains in the node list to preserve routing information
+- **Rationale**: In case of network partitioning, if any single node is active, the complete successor list can be obtained since each node maintains a full view of the system
+
+**Why O(N) instead of O(log N)?**
+- **Partition Tolerance**: O(log N) finger tables fail during network partitions because successor lists become incomplete
+- **Replica Location**: Finding N consecutive replicas requires knowledge of all nodes in the ring
+- **Fault Recovery**: Complete ring knowledge enables finding at least one active node for data recovery
+
+#### 2. **Dynamic Join with Data Redistribution**
+
+When a new node joins the ring:
+
+1. **Finger Table Update**: All nodes update their routing tables to include the new node
+2. **Data Transfer**: The new node receives data from:
+   - **Next N-1 nodes**: To obtain backup copies it should maintain
+   - **Previous N-1 nodes**: To obtain primary data it is now responsible for
+3. **Persistent State**: All transferred data is immediately persisted to disk
+
+This ensures **data consistency and availability** even during dynamic membership changes.
+
+#### 3. **Quorum-Based PUT Operations**
+
+For every `PUT` operation:
+
+1. **Find Primary Node**: Determine which node is responsible for the key using consistent hashing
+2. **Select N Nodes**: Identify N consecutive nodes starting from the primary (including the primary itself)
+3. **Parallel Write**: Perform writes to all N nodes concurrently
+4. **Quorum Check**:
+   - If **W acknowledgments** received → **Success**
+   - If **< W acknowledgments** received → **System unavailable** for this operation
+5. **Vector Clock**: Each write increments the vector clock for causality tracking
+
+**Example** (N=3, W=2):
+```
+Key "user123" → Primary: Node 50
+Write to: Node 50, Node 62, Node 75
+Success requires: 2 out of 3 ACKs
+```
+
+#### 4. **Quorum-Based GET Operations**
+
+For every `GET` operation:
+
+1. **Find Primary Node**: Determine the responsible node for the key
+2. **Read from N Nodes**: Query N consecutive nodes (primary + backups)
+3. **Quorum Check**:
+   - If **R responses** received → **Success**
+   - If **< R responses** received → **System unavailable** for this operation
+4. **Version Resolution**: Use vector clocks to identify the latest version
+5. **Read Repair**: Automatically update stale replicas with the latest version
+
+This ensures **read availability** even when some replica nodes are down.
+
+#### 5. **Why O(N) Routing is Critical**
+
+The O(N) finger table (full ring knowledge) is **essential** for several reasons:
+
+- **Successor List Completeness**: If a primary node disconnects, we need to find the complete successor list to locate backup replicas
+- **Partition Resilience**: In case of network partitions, as long as **any one node is active**, we can reconstruct the full ring topology
+- **Replica Placement**: Identifying N consecutive nodes for quorum operations requires complete ring knowledge
+- **No Single Point of Failure**: Every node can independently determine the correct replica placement
+
+**O(log N) Limitation**: Traditional Chord's O(log N) routing **fails during network partitions** because:
+- Finger tables become incomplete when nodes fail
+- Cannot reliably find all N replicas for quorum operations
+- Successor lists may point to failed nodes with no alternative routes
+
+#### 6. **Persistent Storage Architecture**
+
+All data is persisted to disk in a human-readable format:
+
+```
+storage/
+├── node_X/
+│   ├── primary/          # Keys this node owns
+│   │   └── key.txt       # JSON: {key, value, version, type}
+│   └── backup/
+│       └── node_Y/       # Backups for node Y
+│           └── key.txt
+```
+
+**Benefits**:
+- **Durability**: Data survives node restarts
+- **Debuggability**: Easy inspection of stored values and versions
+- **Recovery**: Nodes can rejoin and restore their state from disk
+
+---
 
 ### Quorum-Based Replication
 
