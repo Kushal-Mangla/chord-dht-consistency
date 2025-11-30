@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chord DHT Simulation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>🔗 Chord Distributed Hash Table Simulation</h1>
+            <p class="subtitle">Interactive visualization of Chord DHT with replication and quorum</p>
+        </header>
+        
+        <main class="app-main">
+            <div class="left-panel">
+                <section id="control-panel">
+                    {% include 'components/control_panel.html' %}
+                </section>
+                
+                <section id="node-details">
+                    {% include 'components/node_details.html' %}
+                </section>
+            </div>
+            
+            <div class="right-panel">
+                <section id="ring-view">
+                    {% include 'components/ring_view.html' %}
+                </section>
+                
+                <section id="event-log">
+                    {% include 'components/event_log.html' %}
+                </section>
+            </div>
+        </main>
+        
+        <footer class="app-footer">
+            <p>Chord DHT Simulation Project | CS Distributed Systems</p>
+        </footer>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/event_handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ring_visualizer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

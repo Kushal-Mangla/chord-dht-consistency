@@ -1,0 +1,26 @@
+# Core dependencies
+asyncio-dgram>=2.1.2
+
+# Web Framework for Visualization
+Flask>=2.3.0
+Flask-SocketIO>=5.3.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-asyncio>=0.21.0
+
+# Data analysis and visualization
+matplotlib>=3.7.0
+pandas>=2.0.0
+numpy>=1.24.0
+seaborn>=0.12.0
+
+# Utilities
+colorama>=0.4.6  # Colored terminal output
+tabulate>=0.9.0  # Pretty-print tables
+requests>=2.31.0  # HTTP library for testing
+
+# Optional: gRPC for future enhancement
+# grpcio>=1.56.0
+# grpcio-tools>=1.56.0

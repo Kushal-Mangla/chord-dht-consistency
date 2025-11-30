@@ -1,0 +1,33 @@
+<!-- Control Panel Component -->
+<div class="control-panel">
+    <h2>Control Panel</h2>
+    
+    <div class="control-section">
+        <h3>Node Management</h3>
+        <div class="input-group">
+            <input type="number" id="node-id-input" placeholder="Node ID (0-255)" min="0" max="255">
+            <button id="join-node-btn" class="btn btn-primary">Add Node</button>
+        </div>
+        <div class="button-group">
+            <button id="offline-node-btn" class="btn btn-warning">Set Offline</button>
+            <button id="online-node-btn" class="btn btn-success">Set Online</button>
+        </div>
+    </div>
+    
+    <div class="control-section">
+        <h3>Key-Value Operations</h3>
+        <div class="input-group">
+            <input type="text" id="key-input" placeholder="Key">
+            <input type="text" id="value-input" placeholder="Value">
+        </div>
+        <div class="button-group">
+            <button id="put-btn" class="btn btn-primary">PUT</button>
+            <button id="get-btn" class="btn btn-info">GET</button>
+        </div>
+    </div>
+    
+    <div class="control-section">
+        <h3>Nodes List</h3>
+        <div id="nodes-list" class="nodes-list"></div>
+    </div>
+</div>
